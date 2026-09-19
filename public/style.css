@@ -383,3 +383,90 @@ label.full input {
   display: flex;
   gap: 10px;
 }
+
+/* 规则清单上的比对口径小签：开着的带底色，关着的是灰边，当前取向一眼能分清 */
+.options-cell {
+  max-width: 220px;
+}
+
+.opt-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.opt {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.opt-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid #c6d8fb;
+}
+
+.opt-off {
+  background: #f4f6f8;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.toggle-row label.check {
+  flex: 0 0 auto;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.toggle-row label.check input {
+  margin: 0;
+}
+
+label.invalid input[type="checkbox"] {
+  outline: 2px solid var(--danger);
+}
+
+/* 扫描结果里的排除目录区块 */
+.exclusions {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #c6d8fb;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  font-size: 12.5px;
+}
+
+.exclusion-block + .exclusion-block {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #c6d8fb;
+}
+
+.excluded-files,
+.suppressed-list {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.excluded-files > li {
+  margin: 2px 0;
+}
+
+.suppressed-list {
+  color: var(--ink-soft);
+  list-style: disc;
+}
+
+td.line-cell mark,
+.suppressed-list mark {
+  background: #ffe58f;
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+}

@@ -210,6 +210,22 @@ function renderScanFileOptions() {
   if (state.files.some((item) => item.id === current)) select.value = current;
 }
 
+// 三个比对开关各画一个小签：开着的写清当前取向，关着的也写明默认口径
+function renderRuleOptions(rule) {
+  const chips = [
+    rule.ignoreCase
+      ? '<span class="opt opt-on">忽略大小写</span>'
+      : '<span class="opt opt-off">区分大小写</span>',
+    rule.wholeWord
+      ? '<span class="opt opt-on">只认整词</span>'
+      : '<span class="opt opt-off">允许片段</span>',
+    rule.excludeDir
+      ? `<span class="opt opt-on">排除目录：${escapeHtml(rule.excludeDir)}/</span>`
+      : '<span class="opt opt-off">不排除目录</span>',
+  ];
+  return `<div class="opt-list">${chips.join('')}</div>`;
+}
+
 function renderRules() {
   const body = el('rule-body');
   body.innerHTML = state.rules.map((item) => `<tr>
@@ -219,6 +235,7 @@ function renderRules() {
       <td>${escapeHtml(item.status)}</td>
       <td>${escapeHtml(item.fileType)}</td>
       <td class="mono">${escapeHtml(item.pattern)}</td>
+      <td class="options-cell">${renderRuleOptions(item)}</td>
       <td class="note-cell">${escapeHtml(item.note)}</td>
       <td class="mono">${escapeHtml(formatTime(item.updatedAt))}</td>
       <td class="actions">
@@ -255,6 +272,9 @@ function openRuleForm(rule) {
   el('rule-status').value = rule ? rule.status : (state.statuses[0] || '启用');
   el('rule-file-type').value = rule ? rule.fileType : (state.fileTypes[0] || '全部');
   el('rule-pattern').value = rule ? rule.pattern : '';
+  el('rule-ignore-case').checked = !!(rule && rule.ignoreCase);
+  el('rule-whole-word').checked = !!(rule && rule.wholeWord);
+  el('rule-exclude-dir').value = rule ? (rule.excludeDir || '') : '';
   el('rule-note').value = rule ? rule.note : '';
   el('rule-form').classList.remove('hidden');
   el('rule-code').focus();
@@ -305,6 +325,9 @@ async function submitRule(event) {
     status: el('rule-status').value,
     fileType: el('rule-file-type').value,
     pattern: el('rule-pattern').value,
+    ignoreCase: el('rule-ignore-case').checked,
+    wholeWord: el('rule-whole-word').checked,
+    excludeDir: el('rule-exclude-dir').value,
     note: el('rule-note').value,
   };
   const editing = state.editingRuleId;
@@ -367,8 +390,17 @@ async function runScan() {
   }
 }
 
+// 命中的那一段在行内高亮出来；位置数据缺失或越界时退化成整行文本
+function renderLineText(hit) {
+  const text = hit.lineText;
+  const start = Number.isInteger(hit.matchStart) ? hit.matchStart : -1;
+  const end = Number.isInteger(hit.matchEnd) ? hit.matchEnd : -1;
+  if (start < 0 || end <= start || end > text.length) return escapeHtml(text);
+  return `${escapeHtml(text.slice(0, start))}<mark>${escapeHtml(text.slice(start, end))}</mark>${escapeHtml(text.slice(end))}`;
+}
+
 function renderScan(result) {
-  el('scan-meta').textContent = `扫描时刻 ${formatTime(result.scannedAt)}　参与比对的规则 ${result.rulesUsed} 条（启用共 ${result.enabledRules} 条）　范围里的文件 ${result.filesInScope} 个（清单共 ${result.filesTotal} 个）`;
+  el('scan-meta').textContent = `扫描时刻 ${formatTime(result.scannedAt)}　参与比对的规则 ${result.rulesUsed} 条（启用共 ${result.enabledRules} 条）　范围里的文件 ${result.filesInScope} 个（清单共 ${result.filesTotal} 个）　本轮口径：忽略大小写 ${result.optionsUsed.ignoreCaseCount} 条、只认整词 ${result.optionsUsed.wholeWordCount} 条、配了排除目录 ${result.optionsUsed.excludeDirCount} 条`;
 
   const warningBox = el('scan-warning');
   if (result.warning) {
@@ -395,6 +427,31 @@ function renderScan(result) {
     <div class="summary-line">按文件：${escapeHtml(fileText)}</div>`;
   summaryBox.classList.remove('hidden');
 
+  // 排除区块：逐条配了排除目录的规则写明排掉了哪些文件、压下了多少条本可以命中的行
+  const exclusionBox = el('scan-exclusions');
+  if (result.exclusions && result.exclusions.length) {
+    const blocks = result.exclusions.map((block) => {
+      const fileLines = block.files.map((file) => {
+        const detail = file.suppressedLines.map((line) => `<li><span class="mono">第 ${line.lineNo} 行</span>　<span class="mono line-cell">${renderLineText(line)}</span></li>`).join('');
+        return `<li>
+          <div class="excluded-file"><span class="mono">${escapeHtml(file.path)}</span>（${file.suppressedLines.length} 条本可命中）</div>
+          ${file.suppressedLines.length ? `<ul class="suppressed-list">${detail}</ul>` : ''}
+        </li>`;
+      }).join('');
+      return `<div class="exclusion-block">
+        <div class="summary-line"><strong>${escapeHtml(block.code)} ${escapeHtml(block.ruleName)}</strong>　排除目录 <span class="mono">${escapeHtml(block.excludeDir)}/</span>　共排除 ${block.fileCount} 个文件，压下 <strong>${block.suppressedCount}</strong> 条本可以命中的条目</div>
+        <ul class="excluded-files">${fileLines}</ul>
+      </div>`;
+    }).join('');
+    exclusionBox.innerHTML = `
+      <div class="summary-line"><strong>这一轮被排除的目录情况</strong>　合计排除文件（文件×规则）${result.excludedFileTotal} 个，压下本可以命中的条目 ${result.suppressedTotal} 条；这些文件不产生命中</div>
+      ${blocks}`;
+    exclusionBox.classList.remove('hidden');
+  } else {
+    exclusionBox.classList.add('hidden');
+    exclusionBox.innerHTML = '';
+  }
+
   const body = el('hit-body');
   body.innerHTML = result.hits.map((hit) => `<tr>
       <td class="mono">${escapeHtml(hit.code)}</td>
@@ -402,7 +459,7 @@ function renderScan(result) {
       <td>${escapeHtml(hit.ruleName)}</td>
       <td class="mono">${escapeHtml(hit.path)}</td>
       <td class="mono">${hit.lineNo}</td>
-      <td class="mono line-cell">${escapeHtml(hit.lineText)}</td>
+      <td class="mono line-cell">${renderLineText(hit)}</td>
     </tr>`).join('');
   el('hit-empty').classList.toggle('hidden', result.hits.length > 0);
 }

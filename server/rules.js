@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { load, save, LEVELS, STATUSES, FILE_TYPES, MAX_CODE_LENGTH, MAX_RULE_NAME_LENGTH, MAX_PATTERN_LENGTH, MAX_NOTE_LENGTH } = require('./store');
+const { load, save, LEVELS, STATUSES, FILE_TYPES, MAX_CODE_LENGTH, MAX_RULE_NAME_LENGTH, MAX_PATTERN_LENGTH, MAX_NOTE_LENGTH, MAX_EXCLUDE_DIR_LENGTH, normalizeDirSegment } = require('./store');
 const { ApiError, pickText } = require('./errors');
 
 // 规则编码固定成大写字母加分段的数字，方便在命中清单里引用
@@ -73,6 +73,36 @@ function validateNote(value) {
   return value.trim();
 }
 
+// 两个开关都是勾选框，传上来的得是布尔值；没传或传空按不勾选处理
+function validateBoolean(value, field, label) {
+  if (value === undefined || value === null) return false;
+  if (typeof value !== 'boolean') {
+    throw new ApiError(400, `${field.toUpperCase()}_INVALID`, `${label}需要是勾选或不勾选`, field);
+  }
+  return value;
+}
+
+// 排除目录留空表示不排除任何目录；写了就得是一段段的相对目录，例如 src/web/legacy
+function validateExcludeDir(value) {
+  if (value === undefined || value === null) return '';
+  if (typeof value !== 'string') {
+    throw new ApiError(400, 'EXCLUDE_DIR_INVALID', '排除目录需要是一段相对目录，例如 src/web/legacy', 'excludeDir');
+  }
+  const raw = value.trim();
+  if (!raw) return '';
+  if (raw.startsWith('/')) {
+    throw new ApiError(400, 'EXCLUDE_DIR_INVALID', '排除目录要写相对目录段，不要以斜线开头，例如 src/web/legacy', 'excludeDir');
+  }
+  if (/(^|\/)\.\.(\/|$)/.test(raw)) {
+    throw new ApiError(400, 'EXCLUDE_DIR_INVALID', '排除目录不要写上级跳转（..）', 'excludeDir');
+  }
+  const text = normalizeDirSegment(value);
+  if (!text) {
+    throw new ApiError(400, 'EXCLUDE_DIR_INVALID', `排除目录只能写相对目录段（字母数字、点、下划线、短横线与斜线），最长 ${MAX_EXCLUDE_DIR_LENGTH} 个字符`, 'excludeDir');
+  }
+  return text;
+}
+
 function sortRules(list) {
   return list.slice().sort((a, b) => {
     if (a.code !== b.code) return a.code < b.code ? -1 : 1;
@@ -128,6 +158,9 @@ function createRule(payload) {
     status: validateStatus(input.status),
     fileType: validateFileType(input.fileType),
     pattern: validatePattern(input.pattern),
+    ignoreCase: validateBoolean(input.ignoreCase, 'ignoreCase', '忽略大小写'),
+    wholeWord: validateBoolean(input.wholeWord, 'wholeWord', '只认整词'),
+    excludeDir: validateExcludeDir(input.excludeDir),
     note: validateNote(input.note),
     createdAt: now,
     updatedAt: now,
@@ -149,6 +182,9 @@ function updateRule(id, payload) {
   found.status = input.status === undefined ? found.status : validateStatus(input.status);
   found.fileType = input.fileType === undefined ? found.fileType : validateFileType(input.fileType);
   found.pattern = input.pattern === undefined ? found.pattern : validatePattern(input.pattern);
+  found.ignoreCase = input.ignoreCase === undefined ? found.ignoreCase : validateBoolean(input.ignoreCase, 'ignoreCase', '忽略大小写');
+  found.wholeWord = input.wholeWord === undefined ? found.wholeWord : validateBoolean(input.wholeWord, 'wholeWord', '只认整词');
+  found.excludeDir = input.excludeDir === undefined ? found.excludeDir : validateExcludeDir(input.excludeDir);
   found.note = input.note === undefined ? found.note : validateNote(input.note);
   found.updatedAt = new Date().toISOString();
   save(data);

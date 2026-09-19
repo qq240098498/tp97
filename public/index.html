@@ -47,6 +47,7 @@
               <th>状态</th>
               <th>适用文件类型</th>
               <th>匹配写法</th>
+              <th>比对口径</th>
               <th>说明</th>
               <th>更新时间</th>
               <th>操作</th>
@@ -74,6 +75,11 @@
             <select id="rule-file-type"></select>
           </label>
           <label data-field="pattern">匹配写法<input id="rule-pattern" placeholder="例如 console.log" maxlength="60"></label>
+        </div>
+        <div class="form-row toggle-row">
+          <label class="check" data-field="ignoreCase"><input type="checkbox" id="rule-ignore-case">比对时忽略大小写（Console.Log、console.log 混写也算命中）</label>
+          <label class="check" data-field="wholeWord"><input type="checkbox" id="rule-whole-word">只认整词（写法夹在更长的词里不算，前后是标点或行首行尾算）</label>
+          <label data-field="excludeDir">排除目录<input id="rule-exclude-dir" placeholder="留空表示不排除；例如 src/web/legacy" maxlength="120"></label>
         </div>
         <label class="full" data-field="note">说明<input id="rule-note" placeholder="这条规则管什么、为什么这么定" maxlength="200"></label>
         <div class="form-actions">
@@ -139,6 +145,7 @@
       <p class="scan-meta" id="scan-meta">还没有扫过，点右上角扫一遍</p>
       <p class="scan-warning hidden" id="scan-warning"></p>
       <div class="summary hidden" id="scan-summary"></div>
+      <div class="exclusions hidden" id="scan-exclusions"></div>
       <div class="table-wrap">
         <table class="grid">
           <thead>

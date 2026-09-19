@@ -8,7 +8,10 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "console.log",
-      "note": "上线前要换成统一日志",
+      "ignoreCase": false,
+      "wholeWord": true,
+      "excludeDir": "",
+      "note": "上线前要换成统一日志；只认整词，console.logger 这种不算",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
     },
@@ -20,6 +23,9 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "var ",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "老代码里还有不少",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -32,7 +38,10 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "TODO",
-      "note": "带人名与期限的可以留",
+      "ignoreCase": true,
+      "wholeWord": false,
+      "excludeDir": "",
+      "note": "带人名与期限的可以留；忽略大小写，todo、Todo 都算",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
     },
@@ -44,7 +53,10 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "eval(",
-      "note": "",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "src/web/legacy",
+      "note": "历史遗留目录里的旧代码先不动，这一片不产生命中",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
     },
@@ -56,6 +68,9 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "password =",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "口令一律走统一配置",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -68,9 +83,12 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "catch (e) {}",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
-      "updatedAt": "2026-09-02T02:00:00.000Z"
+      "updatedAt": "2026-09-19T12:53:50.934Z"
     },
     {
       "id": "rule-1007",
@@ -80,6 +98,9 @@
       "status": "停用",
       "fileType": "js",
       "pattern": "DEBUG = true",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "等联调结束再打开",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -92,6 +113,9 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "postgres://",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -104,6 +128,9 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "process.env[",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "直接按名字取容易拼错",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -116,6 +143,9 @@
       "status": "停用",
       "fileType": "全部",
       "pattern": "FIXME",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -128,6 +158,9 @@
       "status": "启用",
       "fileType": "sh",
       "pattern": "rm -rf",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "脚本里改用受控的清理命令",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -140,6 +173,9 @@
       "status": "启用",
       "fileType": "md",
       "pattern": "待补",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -159,7 +195,7 @@
       "id": "file-2002",
       "path": "src/server/store.js",
       "type": "js",
-      "content": "const fs = require(\"fs\");\n\nfunction dataFile() {\n  const dir = process.env[\"DATA_DIR\"] || \"./data\";\n  console.log(\"数据目录\", dir);\n  return dir + \"/db.json\";\n}\n\nfunction load() {\n  return JSON.parse(fs.readFileSync(dataFile(), \"utf8\"));\n}\n\nmodule.exports = { load };",
+      "content": "const fs = require(\"fs\");\n\nfunction dataFile() {\n  const dir = process.env[\"DATA_DIR\"] || \"./data\";\n  console.log(\"数据目录\", dir);\n  // todo 数据目录以后要支持多环境\n  return dir + \"/db.json\";\n}\n\nfunction load() {\n  return JSON.parse(fs.readFileSync(dataFile(), \"utf8\"));\n}\n\nmodule.exports = { load };",
       "note": "",
       "createdAt": "2026-09-02T03:00:00.000Z",
       "updatedAt": "2026-09-02T03:00:00.000Z"
@@ -186,7 +222,7 @@
       "id": "file-2005",
       "path": "src/web/app.js",
       "type": "js",
-      "content": "const state = { list: [] };\n\nasync function load() {\n  console.log(\"开始加载\");\n  const res = await fetch(\"/api/users\");\n  state.list = await res.json();\n  render();\n}\n\nfunction render() {\n  var box = document.getElementById(\"list\");\n  box.textContent = state.list.length + \" 条\";\n}",
+      "content": "const state = { list: [] };\n\nasync function load() {\n  console.log(\"开始加载\");\n  const res = await fetch(\"/api/users\");\n  state.list = await res.json();\n  render();\n}\n\nfunction render() {\n  var box = document.getElementById(\"list\");\n  // Todo 渲染失败的时候要给用户提示\n  console.logger(\"加载条数\", box.length);\n  box.textContent = state.list.length + \" 条\";\n}",
       "note": "页面入口",
       "createdAt": "2026-09-02T03:00:00.000Z",
       "updatedAt": "2026-09-02T03:00:00.000Z"
