@@ -16,22 +16,23 @@ const MAX_PATH_LENGTH = 120;
 const MAX_CONTENT_LENGTH = 4000;
 
 // 检查规则的初始数据。十二条规则里有两条是停用的，
-// 有一条启用的规则在现有文件里一条命中都没有，用来观察从未命中的规则
+// 有一条启用的规则在现有文件里一条命中都没有，用来观察从未命中的规则；
+// 前四条各自带着不同的比对开关，方便直接看到忽略大小写、只认整词与排除目录的效果
 function seedRules() {
   const at = '2026-09-02T02:00:00.000Z';
   return [
-    { id: 'rule-1001', code: 'CODE-001', name: '禁止提交调试输出', level: '警告', status: '启用', fileType: 'js', pattern: 'console.log', note: '上线前要换成统一日志', createdAt: at, updatedAt: at },
-    { id: 'rule-1002', code: 'CODE-002', name: '变量声明统一用 let 或 const', level: '错误', status: '启用', fileType: 'js', pattern: 'var ', note: '老代码里还有不少', createdAt: at, updatedAt: at },
-    { id: 'rule-1003', code: 'CODE-003', name: '待办事项需要收口', level: '提示', status: '启用', fileType: '全部', pattern: 'TODO', note: '带人名与期限的可以留', createdAt: at, updatedAt: at },
-    { id: 'rule-1004', code: 'CODE-004', name: '禁止动态执行代码', level: '错误', status: '启用', fileType: '全部', pattern: 'eval(', note: '', createdAt: at, updatedAt: at },
-    { id: 'rule-1005', code: 'CODE-005', name: '禁止把口令写进代码', level: '错误', status: '启用', fileType: '全部', pattern: 'password =', note: '口令一律走统一配置', createdAt: at, updatedAt: at },
-    { id: 'rule-1006', code: 'CODE-006', name: '空捕获块要写清原因', level: '警告', status: '启用', fileType: 'js', pattern: 'catch (e) {}', note: '', createdAt: at, updatedAt: at },
-    { id: 'rule-1007', code: 'CODE-007', name: '调试开关上线前要关掉', level: '警告', status: '停用', fileType: 'js', pattern: 'DEBUG = true', note: '等联调结束再打开', createdAt: at, updatedAt: at },
-    { id: 'rule-1008', code: 'CODE-008', name: '数据库地址不许写死在代码里', level: '错误', status: '启用', fileType: '全部', pattern: 'postgres://', note: '', createdAt: at, updatedAt: at },
-    { id: 'rule-1009', code: 'CODE-009', name: '取配置项要走统一封装', level: '提示', status: '启用', fileType: 'js', pattern: 'process.env[', note: '直接按名字取容易拼错', createdAt: at, updatedAt: at },
-    { id: 'rule-1010', code: 'CODE-010', name: '遗留注释要清理', level: '提示', status: '停用', fileType: '全部', pattern: 'FIXME', note: '', createdAt: at, updatedAt: at },
-    { id: 'rule-1011', code: 'CODE-011', name: '脚本里禁止直接用强制删除', level: '警告', status: '启用', fileType: 'sh', pattern: 'rm -rf', note: '脚本里改用受控的清理命令', createdAt: at, updatedAt: at },
-    { id: 'rule-1012', code: 'CODE-012', name: '文档里的临时占位要删掉', level: '提示', status: '启用', fileType: 'md', pattern: '待补', note: '', createdAt: at, updatedAt: at },
+    { id: 'rule-1001', code: 'CODE-001', name: '禁止提交调试输出', level: '警告', status: '启用', fileType: 'js', pattern: 'console.log', ignoreCase: false, wholeWord: false, excludeDir: 'src/web/legacy', note: '上线前要换成统一日志', createdAt: at, updatedAt: at },
+    { id: 'rule-1002', code: 'CODE-002', name: '变量声明统一用 let 或 const', level: '错误', status: '启用', fileType: 'js', pattern: 'var ', ignoreCase: false, wholeWord: true, excludeDir: '', note: '老代码里还有不少', createdAt: at, updatedAt: at },
+    { id: 'rule-1003', code: 'CODE-003', name: '待办事项需要收口', level: '提示', status: '启用', fileType: '全部', pattern: 'TODO', ignoreCase: true, wholeWord: false, excludeDir: '', note: '带人名与期限的可以留', createdAt: at, updatedAt: at },
+    { id: 'rule-1004', code: 'CODE-004', name: '禁止动态执行代码', level: '错误', status: '启用', fileType: '全部', pattern: 'eval(', ignoreCase: false, wholeWord: true, excludeDir: '', note: '', createdAt: at, updatedAt: at },
+    { id: 'rule-1005', code: 'CODE-005', name: '禁止把口令写进代码', level: '错误', status: '启用', fileType: '全部', pattern: 'password =', ignoreCase: false, wholeWord: false, excludeDir: '', note: '口令一律走统一配置', createdAt: at, updatedAt: at },
+    { id: 'rule-1006', code: 'CODE-006', name: '空捕获块要写清原因', level: '警告', status: '启用', fileType: 'js', pattern: 'catch (e) {}', ignoreCase: false, wholeWord: false, excludeDir: '', note: '', createdAt: at, updatedAt: at },
+    { id: 'rule-1007', code: 'CODE-007', name: '调试开关上线前要关掉', level: '警告', status: '停用', fileType: 'js', pattern: 'DEBUG = true', ignoreCase: false, wholeWord: false, excludeDir: '', note: '等联调结束再打开', createdAt: at, updatedAt: at },
+    { id: 'rule-1008', code: 'CODE-008', name: '数据库地址不许写死在代码里', level: '错误', status: '启用', fileType: '全部', pattern: 'postgres://', ignoreCase: false, wholeWord: false, excludeDir: '', note: '', createdAt: at, updatedAt: at },
+    { id: 'rule-1009', code: 'CODE-009', name: '取配置项要走统一封装', level: '提示', status: '启用', fileType: 'js', pattern: 'process.env[', ignoreCase: false, wholeWord: false, excludeDir: '', note: '直接按名字取容易拼错', createdAt: at, updatedAt: at },
+    { id: 'rule-1010', code: 'CODE-010', name: '遗留注释要清理', level: '提示', status: '停用', fileType: '全部', pattern: 'FIXME', ignoreCase: false, wholeWord: false, excludeDir: '', note: '', createdAt: at, updatedAt: at },
+    { id: 'rule-1011', code: 'CODE-011', name: '脚本里禁止直接用强制删除', level: '警告', status: '启用', fileType: 'sh', pattern: 'rm -rf', ignoreCase: false, wholeWord: false, excludeDir: '', note: '脚本里改用受控的清理命令', createdAt: at, updatedAt: at },
+    { id: 'rule-1012', code: 'CODE-012', name: '文档里的临时占位要删掉', level: '提示', status: '启用', fileType: 'md', pattern: '待补', ignoreCase: false, wholeWord: false, excludeDir: '', note: '', createdAt: at, updatedAt: at },
   ];
 }
 
@@ -156,6 +157,7 @@ function seedFiles() {
       content: [
         'const PAD = (num) => String(num).padStart(2, "0");',
         '',
+        '// myeval( 这类写法不算动态执行，不用管',
         'function formatTime(value) {',
         '  const date = new Date(value);',
         '  return date.getFullYear() + "-" + PAD(date.getMonth() + 1) + "-" + PAD(date.getDate());',
@@ -226,6 +228,7 @@ function seedFiles() {
         'APP_DIR=/opt/member',
         '',
         '# TODO 换机器之后要改掉这个路径',
+        '# todo 监控告警还没接',
         'cd "$APP_DIR"',
         'git pull --ff-only',
         'npm ci --omit=dev',
@@ -295,6 +298,15 @@ function seedFiles() {
   ];
 }
 
+// 排除目录统一成不带 ./ 前缀、不带末尾斜线的相对写法，空串表示不排除
+function normalizeExcludeDir(value) {
+  if (typeof value !== 'string') return '';
+  let dir = value.trim();
+  while (dir.startsWith('./')) dir = dir.slice(2);
+  while (dir.endsWith('/')) dir = dir.slice(0, -1);
+  return dir;
+}
+
 // 把单条规则整理成固定结构，级别与状态不认识的一律回到默认值
 function normalizeRule(item, fallbackIndex) {
   const source = item && typeof item === 'object' ? item : {};
@@ -310,6 +322,9 @@ function normalizeRule(item, fallbackIndex) {
     status,
     fileType,
     pattern: typeof source.pattern === 'string' ? source.pattern : '',
+    ignoreCase: typeof source.ignoreCase === 'boolean' ? source.ignoreCase : false,
+    wholeWord: typeof source.wholeWord === 'boolean' ? source.wholeWord : false,
+    excludeDir: normalizeExcludeDir(source.excludeDir),
     note: typeof source.note === 'string' ? source.note : '',
     createdAt,
     updatedAt: typeof source.updatedAt === 'string' && source.updatedAt ? source.updatedAt : createdAt,
@@ -399,6 +414,7 @@ module.exports = {
   normalize,
   normalizeRule,
   normalizeFile,
+  normalizeExcludeDir,
   LEVELS,
   STATUSES,
   FILE_TYPES,

@@ -47,6 +47,7 @@
               <th>状态</th>
               <th>适用文件类型</th>
               <th>匹配写法</th>
+              <th>比对开关</th>
               <th>说明</th>
               <th>更新时间</th>
               <th>操作</th>
@@ -74,6 +75,21 @@
             <select id="rule-file-type"></select>
           </label>
           <label data-field="pattern">匹配写法<input id="rule-pattern" placeholder="例如 console.log" maxlength="60"></label>
+        </div>
+        <div class="form-row switches">
+          <span class="switch-title">比对开关</span>
+          <label class="check" data-field="ignoreCase">
+            <input type="checkbox" id="rule-ignore-case"> 忽略大小写
+          </label>
+          <label class="check" data-field="wholeWord">
+            <input type="checkbox" id="rule-whole-word"> 只认整词
+          </label>
+          <label class="check" data-field="excludeOn">
+            <input type="checkbox" id="rule-exclude-on"> 排除目录
+          </label>
+          <label class="exclude-dir" data-field="excludeDir">要排除的目录
+            <input id="rule-exclude-dir" placeholder="例如 src/web/legacy" maxlength="120">
+          </label>
         </div>
         <label class="full" data-field="note">说明<input id="rule-note" placeholder="这条规则管什么、为什么这么定" maxlength="200"></label>
         <div class="form-actions">
@@ -138,6 +154,7 @@
       </div>
       <p class="scan-meta" id="scan-meta">还没有扫过，点右上角扫一遍</p>
       <p class="scan-warning hidden" id="scan-warning"></p>
+      <div class="scan-exclusions hidden" id="scan-exclusions"></div>
       <div class="summary hidden" id="scan-summary"></div>
       <div class="table-wrap">
         <table class="grid">
@@ -146,6 +163,7 @@
               <th>规则编码</th>
               <th>级别</th>
               <th>规则名称</th>
+              <th>比对口径</th>
               <th>文件</th>
               <th>行号</th>
               <th>那一行的内容</th>

@@ -1,9 +1,40 @@
-const { load, LEVELS, STATUSES } = require('./store');
+const { load, LEVELS, STATUSES, normalizeExcludeDir } = require('./store');
 const { ApiError, pickText } = require('./errors');
+
+// 整词判断里的“词字符”：字母（含汉字）、数字与下划线；其余都算标点或空白
+const WORD_CHAR = /[\p{L}\p{N}_]/u;
 
 // 一条规则管不管这个文件：适用文件类型写成全部的管所有文件，否则只认同类型的
 function ruleAppliesToFile(rule, file) {
   return rule.fileType === '全部' || rule.fileType === file.type;
+}
+
+// 一行里有没有命中：忽略大小写就先统一成小写再比；
+// 只认整词时，写法前后紧挨词字符（夹在更长的词里）不算，前后是标点、空白或者行首行尾才算
+function lineMatches(text, rule) {
+  const needle = rule.ignoreCase ? rule.pattern.toLowerCase() : rule.pattern;
+  if (!needle) return false;
+  const hay = rule.ignoreCase ? text.toLowerCase() : text;
+  let from = 0;
+  for (;;) {
+    const at = hay.indexOf(needle, from);
+    if (at === -1) return false;
+    if (!rule.wholeWord) return true;
+    const before = at > 0 ? hay[at - 1] : '';
+    const after = at + needle.length < hay.length ? hay[at + needle.length] : '';
+    const headOpen = !WORD_CHAR.test(needle[0]) || !before || !WORD_CHAR.test(before);
+    const tailOpen = !WORD_CHAR.test(needle[needle.length - 1]) || !after || !WORD_CHAR.test(after);
+    if (headOpen && tailOpen) return true;
+    from = at + 1;
+  }
+}
+
+// 文件路径是否落在排除目录里，比较时不分大小写
+function isUnderDir(filePath, dir) {
+  if (!dir) return false;
+  const lowerPath = filePath.toLowerCase();
+  const lowerDir = dir.toLowerCase();
+  return lowerPath === lowerDir || lowerPath.startsWith(`${lowerDir}/`);
 }
 
 function levelOrder(level) {
@@ -48,26 +79,48 @@ function scan(options) {
   const filesInScope = scopeFile ? [scopeFile] : data.files;
 
   const hits = [];
+  const exclusionMap = new Map();
   rulesUsed.forEach((rule) => {
+    const excludeDir = normalizeExcludeDir(rule.excludeDir);
     filesInScope.filter((file) => ruleAppliesToFile(rule, file)).forEach((file) => {
+      const excluded = isUnderDir(file.path, excludeDir);
+      if (excluded) {
+        if (!exclusionMap.has(file.id)) {
+          exclusionMap.set(file.id, { fileId: file.id, path: file.path, codes: new Set(), dropped: 0 });
+        }
+        exclusionMap.get(file.id).codes.add(rule.code);
+      }
       file.content.split('\n').forEach((text, index) => {
-        if (text.includes(rule.pattern)) {
-          hits.push({
-            ruleId: rule.id,
-            code: rule.code,
-            ruleName: rule.name,
-            level: rule.level,
-            pattern: rule.pattern,
-            fileId: file.id,
-            path: file.path,
-            fileType: file.type,
-            lineNo: index + 1,
-            lineText: text.trim(),
-          });
+        if (!lineMatches(text, rule)) return;
+        const hit = {
+          ruleId: rule.id,
+          code: rule.code,
+          ruleName: rule.name,
+          level: rule.level,
+          pattern: rule.pattern,
+          ignoreCase: rule.ignoreCase,
+          wholeWord: rule.wholeWord,
+          excludeDir,
+          fileId: file.id,
+          path: file.path,
+          fileType: file.type,
+          lineNo: index + 1,
+          lineText: text.trim(),
+        };
+        if (excluded) {
+          // 落在排除目录里的命中不进清单，只记进排除统计
+          exclusionMap.get(file.id).dropped += 1;
+        } else {
+          hits.push(hit);
         }
       });
     });
   });
+
+  const excludedFiles = Array.from(exclusionMap.values())
+    .map((item) => ({ fileId: item.fileId, path: item.path, codes: Array.from(item.codes).sort(), dropped: item.dropped }))
+    .sort((a, b) => (a.path < b.path ? -1 : 1));
+  const droppedHits = excludedFiles.reduce((sum, item) => sum + item.dropped, 0);
 
   hits.sort((a, b) => {
     if (a.code !== b.code) return a.code < b.code ? -1 : 1;
@@ -104,6 +157,11 @@ function scan(options) {
     rulesTotal: data.rules.length,
     warning,
     hits,
+    exclusions: {
+      fileCount: excludedFiles.length,
+      droppedHits,
+      files: excludedFiles,
+    },
     summary: {
       total: hits.length,
       byLevel,
@@ -113,4 +171,4 @@ function scan(options) {
   };
 }
 
-module.exports = { scan, ruleAppliesToFile, levelOrder };
+module.exports = { scan, ruleAppliesToFile, lineMatches, isUnderDir, levelOrder };

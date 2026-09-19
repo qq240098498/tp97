@@ -8,6 +8,9 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "console.log",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "src/web/legacy",
       "note": "上线前要换成统一日志",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -20,6 +23,9 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "var ",
+      "ignoreCase": false,
+      "wholeWord": true,
+      "excludeDir": "",
       "note": "老代码里还有不少",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -32,6 +38,9 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "TODO",
+      "ignoreCase": true,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "带人名与期限的可以留",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -44,6 +53,9 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "eval(",
+      "ignoreCase": false,
+      "wholeWord": true,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -56,6 +68,9 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "password =",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "口令一律走统一配置",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -68,6 +83,9 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "catch (e) {}",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -80,6 +98,9 @@
       "status": "停用",
       "fileType": "js",
       "pattern": "DEBUG = true",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "等联调结束再打开",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -92,6 +113,9 @@
       "status": "启用",
       "fileType": "全部",
       "pattern": "postgres://",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -104,6 +128,9 @@
       "status": "启用",
       "fileType": "js",
       "pattern": "process.env[",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "直接按名字取容易拼错",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -116,6 +143,9 @@
       "status": "停用",
       "fileType": "全部",
       "pattern": "FIXME",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -128,6 +158,9 @@
       "status": "启用",
       "fileType": "sh",
       "pattern": "rm -rf",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "脚本里改用受控的清理命令",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -140,6 +173,9 @@
       "status": "启用",
       "fileType": "md",
       "pattern": "待补",
+      "ignoreCase": false,
+      "wholeWord": false,
+      "excludeDir": "",
       "note": "",
       "createdAt": "2026-09-02T02:00:00.000Z",
       "updatedAt": "2026-09-02T02:00:00.000Z"
@@ -195,7 +231,7 @@
       "id": "file-2006",
       "path": "src/web/format.js",
       "type": "js",
-      "content": "const PAD = (num) => String(num).padStart(2, \"0\");\n\nfunction formatTime(value) {\n  const date = new Date(value);\n  return date.getFullYear() + \"-\" + PAD(date.getMonth() + 1) + \"-\" + PAD(date.getDate());\n}\n\nfunction formatAmount(cents) {\n  return (cents / 100).toFixed(2);\n}\n\nmodule.exports = { formatTime, formatAmount };",
+      "content": "const PAD = (num) => String(num).padStart(2, \"0\");\n\n// myeval( 这类写法不算动态执行，不用管\nfunction formatTime(value) {\n  const date = new Date(value);\n  return date.getFullYear() + \"-\" + PAD(date.getMonth() + 1) + \"-\" + PAD(date.getDate());\n}\n\nfunction formatAmount(cents) {\n  return (cents / 100).toFixed(2);\n}\n\nmodule.exports = { formatTime, formatAmount };",
       "note": "格式化工具，比较干净",
       "createdAt": "2026-09-02T03:00:00.000Z",
       "updatedAt": "2026-09-02T03:00:00.000Z"
@@ -222,7 +258,7 @@
       "id": "file-2009",
       "path": "scripts/deploy.sh",
       "type": "sh",
-      "content": "#!/usr/bin/env bash\nset -e\n\nAPP_DIR=/opt/member\n\n# TODO 换机器之后要改掉这个路径\ncd \"$APP_DIR\"\ngit pull --ff-only\nnpm ci --omit=dev\nnpm start &\n\necho \"发布完成\"",
+      "content": "#!/usr/bin/env bash\nset -e\n\nAPP_DIR=/opt/member\n\n# TODO 换机器之后要改掉这个路径\n# todo 监控告警还没接\ncd \"$APP_DIR\"\ngit pull --ff-only\nnpm ci --omit=dev\nnpm start &\n\necho \"发布完成\"",
       "note": "发布脚本",
       "createdAt": "2026-09-02T03:00:00.000Z",
       "updatedAt": "2026-09-02T03:00:00.000Z"

@@ -88,6 +88,24 @@ function levelClass(level) {
   return 'lv-hint';
 }
 
+// 三个比对开关的当前取向，规则清单里逐条写清
+function switchText(item) {
+  const caseText = item.ignoreCase ? '忽略大小写' : '区分大小写';
+  const wordText = item.wholeWord ? '只认整词' : '片段也算';
+  const dirText = item.excludeDir ? `排除 ${item.excludeDir}` : '不排除目录';
+  return `${caseText} · ${wordText} · ${dirText}`;
+}
+
+// 命中行上标出这条规则与默认不同的取向，全是默认就写字面比对
+function hitSwitchTags(hit) {
+  const tags = [];
+  if (hit.ignoreCase) tags.push('忽略大小写');
+  if (hit.wholeWord) tags.push('只认整词');
+  if (hit.excludeDir) tags.push(`排除 ${hit.excludeDir}`);
+  if (!tags.length) return '<span class="tag sw">字面比对</span>';
+  return tags.map((tag) => `<span class="tag sw">${escapeHtml(tag)}</span>`).join(' ');
+}
+
 const OPERATOR_KEY = 'check-hits-operator';
 
 function currentOperator() {
@@ -219,6 +237,7 @@ function renderRules() {
       <td>${escapeHtml(item.status)}</td>
       <td>${escapeHtml(item.fileType)}</td>
       <td class="mono">${escapeHtml(item.pattern)}</td>
+      <td class="switch-cell">${escapeHtml(switchText(item))}</td>
       <td class="note-cell">${escapeHtml(item.note)}</td>
       <td class="mono">${escapeHtml(formatTime(item.updatedAt))}</td>
       <td class="actions">
@@ -255,6 +274,12 @@ function openRuleForm(rule) {
   el('rule-status').value = rule ? rule.status : (state.statuses[0] || '启用');
   el('rule-file-type').value = rule ? rule.fileType : (state.fileTypes[0] || '全部');
   el('rule-pattern').value = rule ? rule.pattern : '';
+  el('rule-ignore-case').checked = rule ? Boolean(rule.ignoreCase) : false;
+  el('rule-whole-word').checked = rule ? Boolean(rule.wholeWord) : false;
+  const excludeDir = rule && rule.excludeDir ? rule.excludeDir : '';
+  el('rule-exclude-on').checked = Boolean(excludeDir);
+  el('rule-exclude-dir').value = excludeDir;
+  el('rule-exclude-dir').disabled = !excludeDir;
   el('rule-note').value = rule ? rule.note : '';
   el('rule-form').classList.remove('hidden');
   el('rule-code').focus();
@@ -298,6 +323,13 @@ async function submitRule(event) {
   event.preventDefault();
   clearNotice();
   clearFieldMarks();
+  const excludeOn = el('rule-exclude-on').checked;
+  const excludeDir = el('rule-exclude-dir').value.trim();
+  if (excludeOn && !excludeDir) {
+    notify('勾了排除目录，就把要排除的目录填上', 'error');
+    markField('excludeDir');
+    return;
+  }
   const payload = {
     code: el('rule-code').value,
     name: el('rule-name').value,
@@ -305,6 +337,9 @@ async function submitRule(event) {
     status: el('rule-status').value,
     fileType: el('rule-file-type').value,
     pattern: el('rule-pattern').value,
+    ignoreCase: el('rule-ignore-case').checked,
+    wholeWord: el('rule-whole-word').checked,
+    excludeDir: excludeOn ? excludeDir : '',
     note: el('rule-note').value,
   };
   const editing = state.editingRuleId;
@@ -379,6 +414,20 @@ function renderScan(result) {
     warningBox.textContent = '';
   }
 
+  // 排除目录的账单独写清：这一轮排除了哪些文件、排掉多少条本可以命中的条目
+  const exclusionsBox = el('scan-exclusions');
+  const exclusions = result.exclusions || { fileCount: 0, droppedHits: 0, files: [] };
+  if (exclusions.fileCount > 0) {
+    const detail = exclusions.files
+      .map((item) => `${item.path}（被 ${item.codes.join('、')} 排除，排掉 ${item.dropped} 条）`)
+      .join('；');
+    exclusionsBox.textContent = `排除目录：这一轮一共排除了 ${exclusions.fileCount} 个文件，排掉 ${exclusions.droppedHits} 条本可以命中的条目。${detail}`;
+    exclusionsBox.classList.remove('hidden');
+  } else {
+    exclusionsBox.classList.add('hidden');
+    exclusionsBox.textContent = '';
+  }
+
   const summaryBox = el('scan-summary');
   const levelText = Object.keys(result.summary.byLevel)
     .map((key) => `${key} ${result.summary.byLevel[key]} 条`)
@@ -400,6 +449,7 @@ function renderScan(result) {
       <td class="mono">${escapeHtml(hit.code)}</td>
       <td><span class="tag ${levelClass(hit.level)}">${escapeHtml(hit.level)}</span></td>
       <td>${escapeHtml(hit.ruleName)}</td>
+      <td class="switch-cell">${hitSwitchTags(hit)}</td>
       <td class="mono">${escapeHtml(hit.path)}</td>
       <td class="mono">${hit.lineNo}</td>
       <td class="mono line-cell">${escapeHtml(hit.lineText)}</td>
@@ -473,6 +523,11 @@ el('rule-new').addEventListener('click', () => {
   openRuleForm(null);
 });
 el('rule-cancel').addEventListener('click', closeRuleForm);
+el('rule-exclude-on').addEventListener('change', () => {
+  const input = el('rule-exclude-dir');
+  input.disabled = !el('rule-exclude-on').checked;
+  if (el('rule-exclude-on').checked) input.focus();
+});
 el('file-new').addEventListener('click', () => {
   clearNotice();
   openFileForm(null);
